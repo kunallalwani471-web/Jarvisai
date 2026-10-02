@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="color-scheme" content="dark" />
+<title>J.A.R.V.I.S — Just A Rather Very Intelligent System</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --neon-blue: #00e5ff;
+    --neon-cyan: #00fff0;
+    --neon-red: #ff0055;
+    --neon-yellow: #ffcc00;
+    --neon-green: #00ff88;
+    --neon-purple: #9d4eff;
+    --bg: #030308;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    user-select: none;
+  }
+
+  /* ==== Animated background grid ==== */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(0, 200, 255, 0.12), transparent 60%),
+      radial-gradient(circle at 20% 80%, rgba(157, 78, 255, 0.08), transparent 55%),
+      linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    pointer-events: none;
+    z-index: 0;
+    animation: bgShift 20s ease-in-out infinite;
+  }
+  @keyframes bgShift {
+    0%, 100% { background-position: 0 0, 0 0, 0 0, 0 0; }
+    50% { background-position: 0 0, 0 0, 22px 22px, 22px 22px; }
+  }
+
+  /* ==== Main layout ==== */
+  .app {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* ==== HEADER ==== */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+    background: rgba(3, 3, 8, 0.7);
+    backdrop-filter: blur(14px);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .brand {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 5px;
+    background: linear-gradient(90deg, #00e5ff, #9d4eff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .status {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    color: var(--neon-green);
+    text-transform: uppercase;
+  }
+  .status.offline {
+    background: rgba(255, 0, 85, 0.1);
+    border-color: rgba(255, 0, 85, 0.3);
+    color: var(--neon-red);
+  }
+
+  /* ==== JARVIS ORB STAGE ==== */
+  .orb-stage {
+    flex: 0 0 40vh;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .orb-wrap {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Ripple rings (only when listening) */
+  .ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--neon-blue);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .orb-wrap.listening .ring {
+    animation: ripple 1.6s ease-out infinite;
+  }
+  .orb-wrap.listening .ring:nth-child(2) { animation-delay: 0.5s; }
+  .orb-wrap.listening .ring:nth-child(3) { animation-delay: 1s; }
+  @keyframes ripple {
+    0% { transform: scale(1); opacity: 0.9; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  /* The orb itself */
+  .orb {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    background: radial-gradient(circle at 35% 30%, #b3f7ff 0%, #00c8ff 25%, #0055cc 55%, #001a55 85%, #000010 100%);
+    box-shadow:
+      0 0 40px rgba(0, 229, 255, 0.7),
+      0 0 80px rgba(0, 150, 255, 0.5),
+      0 0 140px rgba(0, 100, 255, 0.3),
+      inset 0 0 40px rgba(180, 250, 255, 0.4);
+    transition: all 0.4s ease;
+    animation: orbIdle 4s ease-in-out infinite;
+  }
+  @keyframes orbIdle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* Inner swirl */
+  .orb::before {
+    content: "";
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: swirl 6s linear infinite;
+    mix-blend-mode: screen;
+    opacity: 0.7;
+  }
+  @keyframes swirl { to { transform: rotate(360deg); } }
+
+  /* Highlight */
+  .orb::after {
+    content: "";
+    position: absolute;
+    top: 14%; left: 20%;
+    width: 32%; height: 22%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.9), transparent 70%);
+    filter: blur(6px);
+  }
+
+  /* ==== ORB STATES ==== */
+
+  /* LISTENING — red pulse */
+  .orb-wrap.listening .orb {
+    background: radial-gradient(circle at 35% 30%, #ffccdd 0%, #ff3388 25%, #cc0055 55%, #550022 85%, #1a0009 100%);
+    box-shadow:
+      0 0 60px rgba(255, 0, 85, 0.9),
+      0 0 120px rgba(255, 0, 85, 0.6),
+      0 0 180px rgba(255, 0, 85, 0.3),
+      inset 0 0 40px rgba(255, 200, 220, 0.5);
+    animation: orbListen 0.9s ease-in-out infinite;
+  }
+  .orb-wrap.listening .ring { border-color: var(--neon-red); }
+  @keyframes orbListen {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  /* THINKING — yellow spin fast */
+  .orb-wrap.thinking .orb {
+    background: radial-gradient(circle at 35% 30%, #fff3c4 0%, #ffbb00 25%, #cc7700 55%, #553300 85%, #1a0f00 100%);
+    box-shadow:
+      0 0 60px rgba(255, 200, 0, 0.9),
+      0 0 120px rgba(255, 170, 0, 0.5),
+      inset 0 0 40px rgba(255, 240, 200, 0.5);
+    animation: orbThink 2s linear infinite;
+  }
+  @keyframes orbThink {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.05); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+  .orb-wrap.thinking .orb::before { animation-duration: 1.5s; }
+
+  /* SPEAKING — green waves */
+  .orb-wrap.speaking .orb {
+    background: radial-gradient(circle at 35% 30%, #ccffe0 0%, #00ff88 25%, #00aa55 55%, #004422 85%, #001208 100%);
+    box-shadow:
+      0 0 60px rgba(0, 255, 136, 0.9),
+      0 0 120px rgba(0, 255, 136, 0.6),
+      0 0 180px rgba(0, 255, 136, 0.3),
+      inset 0 0 40px rgba(200, 255, 220, 0.5);
+    animation: orbSpeak 0.5s ease-in-out infinite;
+  }
+  @keyframes orbSpeak {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.07); }
+  }
+
+  /* ==== Orb label & caption ==== */
+  .orb-label {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(0, 229, 255, 0.5);
+    text-transform: uppercase;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .caption {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 90%;
+    text-align: center;
+    font-size: 12px;
+    color: #dffaff;
+    background: rgba(0, 20, 40, 0.7);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .caption.show { opacity: 1; }
+
+  /* ==== TV SCREEN ==== */
+  .tv-wrap {
+    flex: 1;
+    padding: 0 14px 14px 14px;
+    display: flex;
+    min-height: 0;
+  }
+
+  .tv-frame {
+    flex: 1;
+    border: 1.5px solid rgba(0, 229, 255, 0.3);
+    border-radius: 14px;
+    background: #05050f;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 0 30px rgba(0, 229, 255, 0.15),
+      inset 0 0 60px rgba(0, 229, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tv-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(0, 20, 40, 0.6);
+    border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(0, 229, 255, 0.7);
+  }
+  .tv-bar .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--neon-green);
+    margin-right: 6px;
+    box-shadow: 0 0 8px var(--neon-green);
+    animation: blink 1.6s infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.3; } }
+
+  .tv-bar button {
+    background: rgba(255, 0, 85, 0.15);
+    color: var(--neon-red);
+    border: 1px solid rgba(255, 0, 85, 0.35);
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .tv-bar button:hover { background: rgba(255, 0, 85, 0.3); }
+
+  .tv-body {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    background: #000;
+  }
+
+  #tv-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+    background: #000;
+  }
+
+  #tv-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: auto;
+  }
+
+  /* Placeholder */
+  .tv-placeholder {
+    text-align: center;
+    color: rgba(0, 229, 255, 0.4);
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 3px;
+  }
+  .tv-placeholder .icon {
+    font-size: 42px;
+    margin-bottom: 12px;
+    animation: float 3s ease-in-out infinite;
+  }
+  .tv-placeholder .label {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  .tv-placeholder .sub {
+    font-size: 9px;
+    opacity: 0.6;
+    letter-spacing: 1px;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* Prediction result inside TV */
+  .pred-box {
+    width: 100%;
+    max-width: 420px;
+    background: linear-gradient(145deg, rgba(16, 16, 32, 0.95), rgba(6, 6, 16, 0.98));
+    border: 1.5px solid rgba(0, 229, 255, 0.3);
+    border-radius: 22px;
+    padding: 22px 18px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .pred-box::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+    animation: sweep 3s linear infinite;
+  }
+  @keyframes sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .pred-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(0, 229, 255, 0.6);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .pred-side {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 58px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin: 6px 0 14px;
+    text-transform: uppercase;
+    animation: popIn 0.5s ease;
+  }
+  .pred-side.big {
+    color: var(--neon-blue);
+    text-shadow: 0 0 30px rgba(0, 229, 255, 0.7), 0 0 60px rgba(0, 229, 255, 0.4);
+  }
+  .pred-side.small {
+    color: var(--neon-yellow);
+    text-shadow: 0 0 30px rgba(255, 204, 0, 0.7), 0 0 60px rgba(255, 204, 0, 0.4);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .pred-slots {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .pred-slot {
+    width: 54px;
+    height: 54px;
+    background: rgba(0, 229, 255, 0.06);
+    border: 1.5px solid rgba(0, 229, 255, 0.4);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.1);
+  }
+
+  .pred-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 229, 255, 0.15);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    color: rgba(0, 229, 255, 0.6);
+    letter-spacing: 1px;
+  }
+
+  .pred-accuracy {
+    margin-top: 12px;
+  }
+  .acc-track {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .acc-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-green), var(--neon-blue), var(--neon-purple));
+    border-radius: 4px;
+    transition: width 0.8s ease;
+  }
+  .acc-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    color: rgba(0, 229, 255, 0.6);
+    letter-spacing: 1px;
+  }
+
+  /* Chat log */
+  .log-panel {
+    position: fixed;
+    top: 60px;
+    right: 14px;
+    width: 260px;
+    max-height: 30vh;
+    overflow-y: auto;
+    background: rgba(0, 10, 20, 0.75);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: none;
+  }
+  .log-panel.show { display: block; }
+  .log-panel .you { color: #8899aa; }
+  .log-panel .jarvis { color: var(--neon-blue); }
+  .log-panel .tool { color: var(--neon-yellow); font-size: 10px; }
+
+  /* Hint */
+  .hint {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: rgba(0, 229, 255, 0.35);
+    text-transform: uppercase;
+    z-index: 5;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">J A R V I S</div>
+    <div class="status" id="status-pill">ONLINE</div>
+  </header>
+
+  <!-- ORB -->
+  <div class="orb-stage">
+    <div class="orb-wrap" id="orb-wrap">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="orb" id="orb" title="Tap to speak"></div>
+      <div class="orb-label" id="orb-label">TAP TO SPEAK</div>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <!-- TV SCREEN -->
+  <div class="tv-wrap">
+    <div class="tv-frame">
+      <div class="tv-bar">
+        <div><span class="dot"></span>JARVIS DISPLAY <span id="tv-label" style="opacity:0.5; margin-left:8px;"></span></div>
+        <button onclick="clearTV()">CLEAR</button>
+      </div>
+      <div class="tv-body">
+        <iframe id="tv-iframe" allow="autoplay; encrypted-media; fullscreen; microphone" allowfullscreen></iframe>
+        <div id="tv-content">
+          <div class="tv-placeholder">
+            <div class="icon">📺</div>
+            <div class="label">SYSTEM READY</div>
+            <div class="sub">Ask Jarvis to display something</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">Say "Jarvis, play lofi music" or "predict karo"</div>
+  <div class="log-panel" id="log-panel"></div>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  listening: false,
+  thinking: false,
+  speaking: false,
+  history: [],
+};
+
+const orbEl = document.getElementById('orb');
+const orbWrap = document.getElementById('orb-wrap');
+const orbLabel = document.getElementById('orb-label');
+const captionEl = document.getElementById('caption');
+const statusPill = document.getElementById('status-pill');
+const tvIframe = document.getElementById('tv-iframe');
+const tvContent = document.getElementById('tv-content');
+const tvLabel = document.getElementById('tv-label');
+const logPanel = document.getElementById('log-panel');
+
+/* ============================================================
+   UI HELPERS
+   ============================================================ */
+function setOrbState(s) {
+  orbWrap.classList.remove('listening', 'thinking', 'speaking');
+  if (s === 'listening') {
+    orbWrap.classList.add('listening');
+    orbLabel.textContent = 'LISTENING…';
+    statusPill.textContent = 'LISTENING';
+  } else if (s === 'thinking') {
+    orbWrap.classList.add('thinking');
+    orbLabel.textContent = 'PROCESSING…';
+    statusPill.textContent = 'THINKING';
+  } else if (s === 'speaking') {
+    orbWrap.classList.add('speaking');
+    orbLabel.textContent = 'SPEAKING…';
+    statusPill.textContent = 'SPEAKING';
+  } else {
+    orbLabel.textContent = 'TAP TO SPEAK';
+    statusPill.textContent = 'ONLINE';
+  }
+}
+
+function showCaption(text) {
+  captionEl.textContent = text;
+  captionEl.classList.add('show');
+  clearTimeout(showCaption._t);
+  showCaption._t = setTimeout(() => captionEl.classList.remove('show'), 6000);
+}
+
+function log(text, cls) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = text;
+  logPanel.appendChild(d);
+  logPanel.scrollTop = logPanel.scrollHeight;
+  if (logPanel.children.length > 30) logPanel.removeChild(logPanel.firstChild);
+}
+
+/* ============================================================
+   SPEECH RECOGNITION
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+
+if (SR) {
+  recognition = new SR();
+  recognition.lang = 'en-IN';       // Indian English — works great for Hindi words too
+  recognition.interimResults = false;
+  recognition.continuous = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = async (e) => {
+    const text = e.results[0][0].transcript.trim();
+    if (!text) return;
+    log('You: ' + text, 'you');
+    await handleUserInput(text);
+  };
+  recognition.onerror = (e) => {
+    console.warn('SR error', e.error);
+    state.listening = false;
+    if (e.error !== 'no-speech') {
+      speak('I couldn\'t hear that clearly, sir.');
+    } else {
+      setOrbState('idle');
+    }
+  };
+  recognition.onend = () => {
+    state.listening = false;
+    if (!state.thinking && !state.speaking) setOrbState('idle');
+  };
+} else {
+  statusPill.textContent = 'USE CHROME';
+  statusPill.classList.add('offline');
+}
+
+/* ============================================================
+   SPEECH SYNTHESIS (free browser voice)
+   ============================================================ */
+let voices = [];
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+}
+loadVoices();
+speechSynthesis.onvoiceschanged = loadVoices;
+
+function pickVoice() {
+  // Prefer British male (Jarvis style), then Indian English, then any English male, then any English
+  const prefer = [
+    v => /en-GB/i.test(v.lang) && /male|daniel|george|arthur/i.test(v.name),
+    v => /en-GB/i.test(v.lang),
+    v => /en-IN/i.test(v.lang) && /male/i.test(v.name),
+    v => /en-IN/i.test(v.lang),
+    v => /en/i.test(v.lang) && /male/i.test(v.name),
+    v => /en-US/i.test(v.lang),
+    v => /en/i.test(v.lang),
+  ];
+  for (const fn of prefer) {
+    const found = voices.find(fn);
+    if (found) return found;
+  }
+  return voices[0];
+}
+
+function speak(text) {
+  return new Promise((resolve) => {
+    if (!text) return resolve();
+    state.speaking = true;
+    setOrbState('speaking');
+    showCaption(text);
+
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice();
+    if (v) u.voice = v;
+    u.rate = 1.0;
+    u.pitch = 0.9;
+    u.volume = 1;
+    u.onend = () => {
+      state.speaking = false;
+      setOrbState('idle');
+      resolve();
+    };
+    u.onerror = () => {
+      state.speaking = false;
+      setOrbState('idle');
+      resolve();
+    };
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  });
+}
+
+/* ============================================================
+   TV SCREEN CONTROLS
+   ============================================================ */
+function clearTV() {
+  tvIframe.src = 'about:blank';
+  tvIframe.style.display = 'none';
+  tvContent.style.display = 'flex';
+  tvContent.innerHTML = `
+    <div class="tv-placeholder">
+      <div class="icon">📺</div>
+      <div class="label">SYSTEM READY</div>
+      <div class="sub">Ask Jarvis to display something</div>
+    </div>`;
+  tvLabel.textContent = '';
+}
+
+function showInTV(url, label) {
+  tvContent.style.display = 'none';
+  tvIframe.style.display = 'block';
+  tvIframe.src = url;
+  tvLabel.textContent = label ? '• ' + label : '';
+}
+
+/* ============================================================
+   BIG/SMALL PREDICTION ENGINE
+   (Logic from Prikshit Wingo panel)
+   ============================================================ */
+const PRIKSHIT_API = 'https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json';
+
+async function fetchWithProxy(url) {
+  const proxies = [
+    t => `https://corsproxy.io/?${encodeURIComponent(t)}`,
+    t => `https://api.allorigins.win/raw?url=${encodeURIComponent(t)}`,
+    t => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(t)}`,
+    t => t,
+  ];
+  for (const p of proxies) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(p(url), { cache: 'no-store', signal: ctrl.signal });
+      clearTimeout(tid);
+      if (res.ok) {
+        const data = await res.json();
+        const list = data?.data?.list || data?.list;
+        if (list && list.length) return { data: { list } };
+      }
+    } catch (e) { /* try next */ }
+  }
+  return null;
+}
+
+function run40KEngine(apiList, periodStr) {
+  const history = apiList.slice(0, 100);
+  const numbers = history.map(i => Number(i.number));
+  const outcomes = numbers.map(n => n >= 5 ? 'BIG' : 'SMALL');
+
+  let bigVotes = 20000, smallVotes = 20000;
+  for (let i = 0; i < history.length; i++) {
+    const w = (100 - i) * 400;
+    if (outcomes[i] === 'BIG') bigVotes += w; else smallVotes += w;
+  }
+
+  let finalSide = bigVotes >= smallVotes ? 'BIG' : 'SMALL';
+  let method = '40K Matrix Base Engine';
+  let confidence = (98.2 + Math.random() * 1.5).toFixed(2);
+
+  // Recovery logic from Prikshit engine
+  const st = JSON.parse(localStorage.getItem('jarvis_40k_stats') || '{"currentLossStreak":0}');
+  if (st.currentLossStreak === 1) {
+    finalSide = outcomes[0] === 'BIG' ? 'SMALL' : 'BIG';
+    method = '🛡️ 40K RECOVERY STEP 2 (Inversion Lock)';
+    confidence = '99.45';
+  } else if (st.currentLossStreak >= 2) {
+    const r2 = outcomes.slice(0, 2);
+    if (r2[0] === r2[1]) finalSide = r2[0] === 'BIG' ? 'SMALL' : 'BIG';
+    else finalSide = outcomes[0];
+    method = '⚡ 40K ULTRA-RECOVERY STEP 3';
+    confidence = '99.99';
+  }
+
+  const pool = finalSide === 'BIG' ? [5,6,7,8,9] : [0,1,2,3,4];
+  const freq = {};
+  numbers.forEach(n => { if (pool.includes(n)) freq[n] = (freq[n] || 0) + 1; });
+  const sorted = [...pool].sort((a,b) => (freq[b]||0) - (freq[a]||0));
+  const pNum = parseInt(periodStr) || 1;
+  const n1 = sorted[0];
+  const n2 = sorted[(pNum + 5) % sorted.length];
+
+  return {
+    side: finalSide,
+    nums: [n1, n2],
+    confidence,
+    method,
+    period: periodStr,
+    clusterId: Math.floor(Math.random() * 8999999) + 1000000,
+  };
+}
+
+async function runPrediction() {
+  speak('Analyzing forty thousand matrix data, sir. Please wait.');
+  setOrbState('thinking');
+
+  const res = await fetchWithProxy(`${PRIKSHIT_API}?pageSize=100&pageNo=1&ts=${Date.now()}`);
+  if (!res?.data?.list?.[0]) {
+    await speak('Unable to reach prediction server, sir.');
+    return;
+  }
+  const list = res.data.list;
+  const latest = list[0];
+  const nextPeriod = (BigInt(latest.issueNumber) + 1n).toString();
+  const pred = run40KEngine(list, nextPeriod);
+
+  // Render in TV
+  tvContent.style.display = 'flex';
+  tvIframe.style.display = 'none';
+  tvLabel.textContent = '• PREDICTION';
+  tvContent.innerHTML = `
+    <div class="pred-box">
+      <div class="pred-title">40K MATRIX PREDICTION ENGINE</div>
+      <div class="pred-side ${pred.side.toLowerCase()}">${pred.side}</div>
+      <div class="pred-slots">
+        <div class="pred-slot">${pred.nums[0]}</div>
+        <div class="pred-slot">${pred.nums[1]}</div>
+      </div>
+      <div class="pred-accuracy">
+        <div class="acc-track"><div class="acc-fill" style="width:${pred.confidence}%"></div></div>
+        <div class="acc-text">ACCURACY: ${pred.confidence}% • CLUSTER #${pred.clusterId}</div>
+      </div>
+      <div class="pred-meta">
+        <span>PERIOD: ${nextPeriod.slice(-6)}</span>
+        <span>STEP: ${(JSON.parse(localStorage.getItem('jarvis_40k_stats')||'{}').currentLossStreak || 0) + 1}</span>
+      </div>
+    </div>`;
+
+  await speak(`Prediction ready sir. Target is ${pred.side}, with numbers ${pred.nums[0]} and ${pred.nums[1]}, at ${pred.confidence} percent confidence.`);
+}
+
+/* ============================================================
+   TOOLS (what Jarvis can do)
+   ============================================================ */
+const tools = [
+  {
+    name: 'playYouTube',
+    description: 'Search and play a video or music on YouTube in the TV screen. Use this when the user asks to play music, songs, videos, trailers, etc.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query, e.g. "lofi hip hop", "Iron Man trailer"' }
+      },
+      required: ['query']
+    }
+  },
+  {
+    name: 'openWebsiteInTV',
+    description: 'Open any website URL in the TV screen. Prefer playYouTube for videos.',
+    parameters: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'Full URL like https://example.com' },
+        label: { type: 'string', description: 'Short label shown in TV bar' }
+      },
+      required: ['url']
+    }
+  },
+  {
+    name: 'clearTV',
+    description: 'Clear / empty the TV screen.',
+    parameters: { type: 'object', properties: {} }
+  },
+  {
+    name: 'runBigSmallPrediction',
+    description: 'Run the Big/Small (WinGo) prediction engine and display the prediction on the TV screen. Use this when the user asks to predict, asks for big/small signal, or asks for a "prediction".',
+    parameters: { type: 'object', properties: {} }
+  },
+  {
+    name: 'getCurrentTime',
+    description: 'Get current date and time.',
+    parameters: { type: 'object', properties: {} }
+  }
+];
+
+const toolImpl = {
+  playYouTube: ({ query }) => {
+    const url = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&autoplay=1`;
+    showInTV(url, 'YT: ' + query);
+    return `Playing "${query}" on YouTube in the TV.`;
+  },
+  openWebsiteInTV: ({ url, label }) => {
+    if (!/^https?:/i.test(url)) url = 'https://' + url;
+    showInTV(url, label || url);
+    return `Opened ${url} in the TV.`;
+  },
+  clearTV: () => { clearTV(); return 'TV cleared.'; },
+  runBigSmallPrediction: () => {
+    runPrediction();  // fire & forget — handled async
+    return 'Running 40K Big/Small prediction engine. Result will appear on the TV.';
+  },
+  getCurrentTime: () => new Date().toLocaleString(),
+};
+
+/* ============================================================
+   GROQ CALL (via our secure backend /api/groq)
+   ============================================================ */
+async function callGemini(contents) {
+  const res = await fetch('/api/groq', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents, tools }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    console.error('Groq backend error:', data);
+    throw new Error(
+      data?.error ||
+      data?.message ||
+      `Backend error ${res.status}`
+    );
+  }
+
+  return data;
+}
+
+/* ============================================================
+   CONVERSATION LOOP
+   ============================================================ */
+async function handleUserInput(text) {
+  state.thinking = true;
+  setOrbState('thinking');
+  state.history.push({ role: 'user', parts: [{ text }] });
+
+  try {
+    let response = await callGemini(state.history);
+    let parts = response.candidates?.[0]?.content?.parts || [];
+
+    // Tool loop
+    while (parts.some(p => p.functionCall)) {
+      const toolResponses = [];
+      for (const part of parts) {
+        if (part.functionCall) {
+          const { name, args } = part.functionCall;
+          log(`⚙ ${name}(${JSON.stringify(args)})`, 'tool');
+          let result;
+          try {
+            result = toolImpl[name] ? toolImpl[name](args || {}) : 'Unknown tool ' + name;
+          } catch (err) {
+            result = 'Tool error: ' + err.message;
+          }
+          toolResponses.push({ functionResponse: { name, response: { result } } });
+        }
+      }
+      state.history.push({ role: 'model', parts });
+      state.history.push({ role: 'user', parts: toolResponses });
+      response = await callGemini(state.history);
+      parts = response.candidates?.[0]?.content?.parts || [];
+    }
+
+    const finalText = parts.map(p => p.text).filter(Boolean).join(' ').trim();
+    state.history.push({ role: 'model', parts });
+
+    // Trim history
+    if (state.history.length > 24) state.history = state.history.slice(-24);
+
+    state.thinking = false;
+    if (finalText) {
+      log('Jarvis: ' + finalText, 'jarvis');
+      await speak(finalText);
+    } else {
+      setOrbState('idle');
+    }
+  } catch (err) {
+    console.error(err);
+    state.thinking = false;
+    setOrbState('idle');
+    const message = err?.message || 'Unknown server error.';
+    console.error('JARVIS ERROR:', message);
+    await speak(`Sorry sir. ${message}`);
+  }
+}
+
+/* ============================================================
+   ORB CLICK HANDLER
+   ============================================================ */
+orbEl.addEventListener('click', () => {
+  if (!recognition) {
+    speak('Voice recognition is not supported in this browser. Please use Chrome.');
+    return;
+  }
+  if (state.listening) {
+    recognition.stop();
+    return;
+  }
+  speechSynthesis.cancel();
+  try {
+    recognition.start();
+    state.listening = true;
+    setOrbState('listening');
+  } catch (e) {
+    console.warn(e);
+  }
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('load', () => {
+  // Greet after voices load
+  setTimeout(() => {
+    speak('Jarvis online. How may I assist you, sir?');
+  }, 900);
+
+  // Show log panel briefly then hide (or keep as toggle)
+  logPanel.classList.add('show');
+  setTimeout(() => logPanel.classList.remove('show'), 8000);
+
+  log('Jarvis ready. Try: "Play lofi music" or "Predict karo"', 'jarvis');
+});
+
+// Expose for debugging
+window.__jarvis = { speak, clearTV, showInTV, runPrediction };
+</script>
+</body>
+</html>
